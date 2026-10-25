@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#090d19">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="URBAN ONE Hybrid, integrazione modulare iOS e Android">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data:; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<title>URBAN ONE · Unified Hybrid</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div class="app">
+  <header class="topbar"><div class="brand"><div class="brandmark">U<span>1</span></div><div><strong>URBAN ONE</strong><small>UNIFIED HYBRID · iOS / ANDROID</small></div></div><span class="eyebrow">INTEGRATION BUILD</span></header>
+  <main id="dashboard" class="dashboard">
+    <div class="headline"><span class="mini">MULTI-REPOSITORY / ENTERPRISE</span><h1>Un ecosistema.<br><em>Un'unica esperienza.</em></h1><p>App ibrida autonoma che integra i moduli disponibili senza modificare i progetti originari. Accesso ai servizi esterni soltanto dopo verifiche e consenso.</p></div>
+    <div class="stats"><div><b id="reposCount">2</b><small>Repository sorgente</small></div><div><b id="modulesCount">0</b><small>Moduli integrabili</small></div><div><b id="readyCount">0</b><small>Interfacce caricate</small></div></div>
+    <div class="section-heading"><h2>Workspace</h2><span>Seleziona un modulo</span></div>
+    <section class="tiles" id="modules" aria-label="Moduli disponibili"></section>
+    <div class="section-heading"><h2>Controllo release</h2></div>
+    <div class="notice" role="note"><strong>Operatività verificata ≠ codice disponibile.</strong> Cataloghi immobiliari, AI autenticata, affiliate Booking/CJ, servizi PSD2, Stripe live e pubblicazione negli store restano soggetti a verifiche indipendenti.</div>
+    <section class="sources" aria-label="Sorgenti GitHub"><h3>Repository collegati per origine</h3><p>URBAN ONE Enterprise · <code>-URBAN-ONE</code><br>KKUBERA AI · <code>URBAN-ONE</code><br>Progetto integrazione · repository indipendente</p></section>
+  </main>
+  <section class="viewer" id="viewer" hidden aria-label="Modulo aperto"><div class="viewer-head"><button id="back" class="back">← Workspace</button><div><strong id="viewerTitle"></strong><small>Modulo locale · sorgente isolata</small></div><button id="close" class="close" aria-label="Chiudi modulo">×</button></div><iframe id="moduleFrame" title="Modulo selezionato" sandbox="allow-scripts allow-forms allow-same-origin allow-modals allow-downloads" referrerpolicy="no-referrer"></iframe></section>
+  <nav class="bottom" aria-label="Navigazione principale"><button id="homeNav" aria-current="page"><span>◫</span>Home</button><button id="moduleNav"><span>▦</span>Moduli</button><button id="statusNav"><span>◎</span>Stato</button></nav>
+</div>
+<script type="module" src="./app.js"></script>
+</body></html>
