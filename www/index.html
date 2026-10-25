@@ -9,6 +9,12 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' data:; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <title>URBAN ONE · Unified Hybrid</title>
 <link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./pwa.css">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
 <div class="app">
@@ -26,4 +32,5 @@
   <nav class="bottom" aria-label="Navigazione principale"><button id="homeNav" aria-current="page"><span>◫</span>Home</button><button id="moduleNav"><span>▦</span>Moduli</button><button id="statusNav"><span>◎</span>Stato</button></nav>
 </div>
 <script type="module" src="./app.js"></script>
+<script type="module" src="./pwa.js"></script>
 </body></html>

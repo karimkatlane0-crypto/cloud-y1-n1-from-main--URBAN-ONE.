@@ -1,0 +1,76 @@
+name: Golden Age — Public Shell Android APK
+on:
+  push:
+    branches:
+      - 'main-@URBAN-ONE'
+      - 'feat/golden-age-installable-pwa-android-shell-20261025'
+    paths:
+      - 'www/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'capacitor.config.ts'
+      - '.github/workflows/public-shell-android.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: public-shell-android-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  shell-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Guard no private-source bundle
+        run: |
+          test ! -e www/modules/kkubera/index.html
+          test ! -e www/modules/urban-one/index.html
+          test ! -e www/source-build.json
+          echo "PUBLIC_SHELL_ONLY: no private modules included"
+      - name: Verify shell and PWA source
+        run: npm test && npm run verify
+  android-debug:
+    needs: shell-verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Verify Android SDK available on runner
+        run: |
+          test -d "${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          test -x "${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager" || which sdkmanager
+          echo "Android SDK path: ${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+      - name: Build PUBLIC shell APK (development only)
+        run: |
+          npm install --no-audit --no-fund
+          npx cap add android
+          npx cap sync android
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleDebug --no-daemon
+      - name: Package checksum and debug artifact
+        run: |
+          sha256sum android/app/build/outputs/apk/debug/app-debug.apk > SHA256SUMS.txt
+          echo "Only PUBLIC shell: no private KKUBERA/SEVA backend, no payment, no store signing."
+      - uses: actions/upload-artifact@v4
+        with:
+          name: golden-age-public-shell-android-debug
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            SHA256SUMS.txt
+          retention-days: 14
+          if-no-files-found: error
