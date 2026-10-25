@@ -50,3 +50,7 @@ npx cap sync ios
 ## Tavolo AI Superiore
 
 The new asset-based local superior command board is located at [www/tavolo-ai.html](www/tavolo-ai.html). Technical asset inventory, specialized role routing, 3-level goals and evidence-gated releases. It is **not** yet a live generative model or cloud executor. Details: [docs/TAVOLO-AI-SUPERIORE.md](docs/TAVOLO-AI-SUPERIORE.md).
+
+## Installable GOLDEN AGE PWA + public shell debug APK
+
+Mobile installation instructions: [docs/INSTALL-GOLDEN-AGE.md](docs/INSTALL-GOLDEN-AGE.md). The PWA and APK contain public shell only, NOT private KKUBERA sources or live backend connectors. Android APK is development/debug only.
