@@ -1,0 +1,110 @@
+name: Hybrid native validation
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'www/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'package.json'
+      - 'capacitor.config.ts'
+      - '.github/workflows/hybrid-mobile.yml'
+
+jobs:
+  shell-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test && npm run verify
+
+  android-debug:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Protect private KKUBERA source
+        env:
+          REPO_PRIVATE: ${{ github.event.repository.private }}
+        run: test "$REPO_PRIVATE" = "true" || (echo 'BLOCKED: public integration repository; no private-source checkout or artifacts allowed' && exit 1)
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - uses: actions/checkout@v4
+        with:
+          repository: karimkatlane0-crypto/-URBAN-ONE
+          ref: main-@URBAN-ONE
+          path: sources/urban
+      - name: Require private source authorization
+        env:
+          READ_TOKEN: ${{ secrets.SOURCE_REPOS_READ_TOKEN }}
+        run: test -n "$READ_TOKEN" || (echo 'BLOCKED: SOURCE_REPOS_READ_TOKEN missing' && exit 1)
+      - uses: actions/checkout@v4
+        with:
+          repository: karimkatlane0-crypto/URBAN-ONE
+          ref: main-@URBAN-ONE
+          path: sources/kkubera
+          token: ${{ secrets.SOURCE_REPOS_READ_TOKEN }}
+      - name: Bundle verified local frontends
+        run: |
+          npm install --no-audit --no-fund
+          npm test
+          npm run sync:sources -- --urban=sources/urban --kkubera=sources/kkubera
+          node scripts/verify.mjs --release
+      - name: Build Android debug APK only
+        run: |
+          npx cap add android
+          npx cap sync android
+          cd android && ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: urban-one-hybrid-android-debug
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 7
+
+  ios-simulator:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: macos-latest
+    steps:
+      - name: Protect private KKUBERA source
+        env:
+          REPO_PRIVATE: ${{ github.event.repository.private }}
+        run: test "$REPO_PRIVATE" = "true" || (echo 'BLOCKED: public integration repository; no private-source checkout or artifacts allowed' && exit 1)
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/checkout@v4
+        with:
+          repository: karimkatlane0-crypto/-URBAN-ONE
+          ref: main-@URBAN-ONE
+          path: sources/urban
+      - name: Require private source authorization
+        env:
+          READ_TOKEN: ${{ secrets.SOURCE_REPOS_READ_TOKEN }}
+        run: test -n "$READ_TOKEN" || (echo 'BLOCKED: SOURCE_REPOS_READ_TOKEN missing' && exit 1)
+      - uses: actions/checkout@v4
+        with:
+          repository: karimkatlane0-crypto/URBAN-ONE
+          ref: main-@URBAN-ONE
+          path: sources/kkubera
+          token: ${{ secrets.SOURCE_REPOS_READ_TOKEN }}
+      - name: Bundle frontends & generate iOS
+        run: |
+          npm install --no-audit --no-fund
+          npm test
+          npm run sync:sources -- --urban=sources/urban --kkubera=sources/kkubera
+          node scripts/verify.mjs --release
+          npx cap add ios
+          npx cap sync ios
+      - name: Unsigned iOS simulator compilation
+        run: |
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -sdk iphonesimulator -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
