@@ -46,3 +46,7 @@ npx cap sync ios
 - KKUBERA's DBRELAY is separate from SEVA DBRELAY; payment flows remain unchanged in the original backends.
 - Capacitor WebView is used only for bundled local frontend; independent, verified HTTPS login services require a separate, audited auth/deep-link design before activation.
 - Browser-ready shell and code presence do not imply deployed backend services or published stores.
+
+## Tavolo AI Superiore
+
+The new asset-based local superior command board is located at [www/tavolo-ai.html](www/tavolo-ai.html). Technical asset inventory, specialized role routing, 3-level goals and evidence-gated releases. It is **not** yet a live generative model or cloud executor. Details: [docs/TAVOLO-AI-SUPERIORE.md](docs/TAVOLO-AI-SUPERIORE.md).
