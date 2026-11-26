@@ -1,0 +1,81 @@
+name: ALL-IN-ONE public shell verification
+on:
+  push:
+    branches:
+      - 'feat/all-in-one-integration-20261126'
+    paths:
+      - 'www/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'capacitor.config.ts'
+      - 'docs/ALL-IN-ONE-EXECUTION-CONTRACT.md'
+      - '.github/workflows/all-in-one-shell-verify.yml'
+  pull_request:
+    branches:
+      - 'main-@URBAN-ONE'
+    paths:
+      - 'www/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'capacitor.config.ts'
+      - 'docs/ALL-IN-ONE-EXECUTION-CONTRACT.md'
+      - '.github/workflows/all-in-one-shell-verify.yml'
+permissions:
+  contents: read
+concurrency:
+  group: all-in-one-shell-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  shell-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Assert public-only source boundary
+        run: |
+          test ! -e www/modules/kkubera/index.html
+          test ! -e www/modules/urban-one/index.html
+          test ! -e www/source-build.json
+      - name: Run tests and shell verification
+        run: |
+          npm install --no-audit --no-fund
+          npm test
+          npm run verify
+  android-debug:
+    needs: shell-verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Verify Android SDK is preinstalled
+        run: |
+          test -d "${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          test -x "${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager" || which sdkmanager
+      - name: Build unsigned public-shell APK
+        run: |
+          npm install --no-audit --no-fund
+          npx cap add android
+          npx cap sync android
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: all-in-one-public-shell-debug
+          path: android/app/build/outputs/apk/debug/*.apk
+          retention-days: 7
+          if-no-files-found: error
