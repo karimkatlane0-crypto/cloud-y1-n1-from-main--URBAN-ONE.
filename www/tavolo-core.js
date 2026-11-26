@@ -14,13 +14,42 @@ export const STATUS=Object.freeze({todo:'Da preparare',doing:'In corso',blocked:
 export const STAGES=Object.freeze(['GOAL','INTEGRATE','VERIFY','VALIDATE','RELEASE']);
 export function clean(s,limit=160){return String(s??'').replace(/[\u0000-\u001f\u007f]/g,' ').trim().slice(0,limit)}
 export function depth(goals,parent){let d=0,seen=new Set();while(parent){if(seen.has(parent))throw Error('Gerarchia ciclica');seen.add(parent);const g=goals.find(x=>x.id===parent);if(!g)throw Error('Padre inesistente');parent=g.parentId||null;d++}return d}
+
+/**
+ * Validates a complete goal tree before it is used or mutated.
+ * MAX_DEPTH counts child levels below the root; depth() includes the
+ * current node, so a valid deepest node has depth MAX_DEPTH + 1.
+ */
+export function validateGoalGraph(goals){
+ if(!Array.isArray(goals))throw Error('Archivio missioni non valido');
+ const ids=new Set();
+ for(const g of goals){
+  if(!g||typeof g!=='object'||Array.isArray(g))throw Error('Missione non valida');
+  const id=clean(g.id,80);
+  if(!id)throw Error('ID missione mancante');
+  if(ids.has(id))throw Error('ID missione duplicato: '+id);
+  ids.add(id);
+ }
+ for(const g of goals){
+  const parentId=g.parentId?clean(g.parentId,80):null;
+  if(parentId&&!ids.has(parentId))throw Error('Padre inesistente: '+parentId);
+ }
+ for(const g of goals){
+  const nodeDepth=depth(goals,clean(g.id,80));
+  if(nodeDepth>MAX_DEPTH+1)throw Error('Gerarchia oltre il limite di tre sotto-livelli');
+ }
+ return goals;
+}
+
 export function addGoal(goals,raw){
+ validateGoalGraph(goals);
  const title=clean(raw.title);if(title.length<3)throw Error('Obiettivo troppo breve');
  const parentId=raw.parentId||null;if(depth(goals,parentId)>MAX_DEPTH)throw Error('Massimo tre sotto-livelli');
  const assets=[...new Set((Array.isArray(raw.assets)?raw.assets:[]).filter(x=>ASSETS.some(a=>a.id===x)))];
  return {id:'g'+Date.now().toString(36)+Math.random().toString(36).slice(2,9),title,parentId,assets,status:'todo',evidence:'',createdAt:new Date().toISOString()};
 }
 export function updateGoal(goals,id,patch){
+ validateGoalGraph(goals);
  if(!goals.some(g=>g.id===id))throw Error('Missione sconosciuta');
  return goals.map(g=>{if(g.id!==id)return g;const status=patch.status??g.status,evidence=clean(patch.evidence??g.evidence,1200);
  if(!Object.hasOwn(STATUS,status))throw Error('Stato non previsto');
@@ -44,10 +73,20 @@ export function plan(g){
   assetIds:g.assets,externalExecution:false,providerVerified:false,ownerApprovalRequired:true};
 }
 export function stats(goals){return {total:goals.length,verified:goals.filter(g=>g.status==='verified').length,blocked:goals.filter(g=>g.status==='blocked').length}}
-export function snapshot(goals){return {schema:'URBAN_ONE_AI_TABLE_V1',origin:'local-device',assets:ASSETS,goals,plans:goals.map(plan),permissions:{payments:false,banking:false,externalActions:false,aiProvider:false}}}
+export function snapshot(goals){validateGoalGraph(goals);return {schema:'URBAN_ONE_AI_TABLE_V1',origin:'local-device',assets:ASSETS,goals,plans:goals.map(plan),permissions:{payments:false,banking:false,externalActions:false,aiProvider:false}}}
+
+/**
+ * Parses locally stored goals without silently dropping records. Invalid
+ * ancestry, duplicate IDs, cycles and excessive depth throw so the UI can
+ * preserve and export the original payload instead of overwriting it.
+ */
 export function safeLoad(input){
- try{const x=JSON.parse(input);if(!Array.isArray(x)||x.length>250)return [];const seen=new Set();
- return x.filter(g=>{if(!g||typeof g!=='object'||typeof g.id!=='string'||seen.has(g.id)||!Object.hasOwn(STATUS,g.status)||typeof g.title!=='string')return false;seen.add(g.id);return true})
- .map(g=>({id:clean(g.id,80),title:clean(g.title),parentId:typeof g.parentId==='string'?clean(g.parentId,80):null,assets:(Array.isArray(g.assets)?g.assets:[]).filter(x=>ASSETS.some(a=>a.id===x)),status:g.status,evidence:clean(g.evidence,1200),createdAt:clean(g.createdAt,60)}));
- }catch{return []}
+ if(input===null||input===undefined||input==='')return [];
+ const parsed=JSON.parse(input);
+ if(!Array.isArray(parsed)||parsed.length>250)throw Error('Archivio missioni non valido o oltre il limite di 250 record');
+ const goals=parsed.map(g=>{
+  if(!g||typeof g!=='object'||Array.isArray(g)||typeof g.id!=='string'||typeof g.title!=='string'||!Object.hasOwn(STATUS,g.status))throw Error('Record missione non valido');
+  return {id:clean(g.id,80),title:clean(g.title),parentId:typeof g.parentId==='string'&&g.parentId?clean(g.parentId,80):null,assets:(Array.isArray(g.assets)?g.assets:[]).filter(x=>ASSETS.some(a=>a.id===x)),status:g.status,evidence:clean(g.evidence,1200),createdAt:clean(g.createdAt,60)};
+ });
+ return validateGoalGraph(goals);
 }
