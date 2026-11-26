@@ -61,7 +61,10 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - uses: android-actions/setup-android@v3
+      - name: Verify Android SDK is preinstalled
+        run: |
+          test -d "${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          test -x "${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager" || which sdkmanager
       - name: Build unsigned public-shell APK
         run: |
           npm install --no-audit --no-fund
