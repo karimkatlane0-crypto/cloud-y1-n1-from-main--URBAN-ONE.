@@ -18,3 +18,13 @@ The auxiliary GitHub integration repo is public; **never** bundle private KKUBER
 
 ## Next level (not yet implemented)
 Private server-side AI orchestrator, user login and explicit agent approval policies, read-only source adapters, retrieval with provenance, tests on Android/iPhone, model evals, metrics and rollback. All actions require approval before execution.
+
+## Goal-graph integrity correction — 26 Nov 2026
+
+- Validate the complete parent graph before adding/updating goals and when loading local storage.
+- Reject duplicate IDs, missing parents, circular ancestry and graphs deeper than three child levels.
+- Keep the original invalid local-storage payload intact: disable writes and offer an exact JSON quarantine export instead of silently dropping or overwriting records.
+- The parent selector now exposes the full three-level subgoal depth supported by the core validator.
+- Regression tests cover corrupt imports, circular references, orphan parents, excessive depth, preservation/export and UI depth parity.
+
+Verification is pending the exact-head GitHub Actions run. This patch does not change deployment, private-source bundling, payment/provider access, or production release status.
